@@ -1,0 +1,83 @@
+---
+title: "R语言第二次作业"
+author: "2233399马杰"
+date: "2022-11-27"
+output:
+  word_document: default
+  pdf_document: default
+---
+
+# 任务1：Using the iri dateset
+### Get a subset with STATE_CODE 6 and SHRP_ID starting with 050 
+```{r message=FALSE, warning=FALSE}
+library(dplyr) 
+library(tidyr) 
+iri <- read.csv("iri.csv")  
+iri_sub <- subset(iri,STATE_CODE == 6 & substr(SHRP_ID,1,3)=='050')  
+head(iri_sub)
+```
+### Get the summary statistics of each section: min , max ,and mean
+
+```{r message=FALSE}
+iri_group <- iri %>%
+  group_by(STATE_CODE,SHRP_ID) %>%
+  summarize(iri_max = max(IRI),iri_min = min(IRI),iri_mean = mean(IRI))
+head(iri_group)
+```
+### Sort the summarized data by mean IRI in descending order(report results for one section only)
+```{r message=FALSE}
+iri_group[order(iri_group$iri_mean,decreasing = T),]
+```
+### Generate a scatter plot for the averaged IRI against the time for a selected section,and then give your interpretation of the plot:
+
+
+```{r message=FALSE}
+iri_section1 <- subset(iri,STATE_CODE == 6 & SHRP_ID == "0501")   
+iri_section1_g <- iri_section1 |>
+  group_by(VISIT_DATE) |>
+  summarise(iri_mean = mean(IRI,na.rm = T))
+iri_section1_g <- separate(iri_section1_g,VISIT_DATE,c("DATE","TIME"),sep=",") |>
+  mutate(DATE = as.Date(DATE,"%m/%d/%y"))
+plot(iri_section1_g$DATE,iri_section1_g$iri_mean)
+```
+
+图像解释：上图展示了STATE_CODE == 6且SHRP_ID == "0501"这个section的iri随时间变化趋势，即从1995年到2008年，iri基本处于稳步上升趋势
+
+# 任务2：Using the CRSS datasets in 2017
+### 导入包
+```{r message=FALSE, include=FALSE}
+library(dplyr) 
+library(tidyr) 
+library(tidyverse)
+library(naniar)
+```
+
+### Get the intersection of the datasets accident and person
+```{r message=FALSE}
+accident <- read.csv("ACCIDENT.csv")  
+person <- read.csv("PERSON.csv")
+vehicle <- read.csv("VEHICLE.csv")
+intersect(colnames(accident),colnames(person))
+key <- intersect(colnames(accident),colnames(person))
+inter <- inner_join(accident,person,by=c(key))
+head(inter)
+```
+### Tabulate the total number of observations in each injury severity(INJ_SEV)
+```{r}
+severity <- person %>%
+  group_by(INJ_SEV) %>%
+  summarize(sec_count = n())
+severity
+```
+
+### Merge the accident datasetwiththe vehicle dataset,and report the dimension of your results and number of missing values in one variable of the right dataset
+
+```{r}
+left <- left_join(accident,vehicle)
+dim(left)
+left %>% 
+  miss_var_summary()
+```
+
+#任务3：Push your homework to a git repository
+
